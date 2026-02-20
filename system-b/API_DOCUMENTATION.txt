@@ -1,0 +1,393 @@
+================================================================================
+SISTEMA B - SISTEMA DE CUMPLIMIENTO DE PEDIDOS
+DOCUMENTACIÓN DE API (XML)
+Versión 1.0.0
+================================================================================
+
+INFORMACIÓN GENERAL
+-------------------
+Sistema: Sistema de Cumplimiento de Pedidos
+Tipo de API: XML (Legacy)
+URL Base: http://localhost:5002
+Formato de Respuesta: XML
+Codificación: UTF-8
+
+
+ENDPOINTS DISPONIBLES
+=====================
+
+1. LISTAR PEDIDOS
+-----------------
+Obtiene una lista de todos los pedidos en el sistema.
+
+Endpoint: GET /api/orders
+Parámetros de consulta (opcionales):
+  - status: Filtrar por estado (valores: pending, processing, completed, cancelled)
+
+Ejemplo de solicitud:
+  GET http://localhost:5002/api/orders
+  GET http://localhost:5002/api/orders?status=pending
+
+Respuesta exitosa (200 OK):
+<?xml version="1.0" ?>
+<orders_response>
+  <status>success</status>
+  <count>3</count>
+  <orders>
+    <item>
+      <id>1</id>
+      <order_number>ORD-2024-001</order_number>
+      <customer_name>María González</customer_name>
+      <location_code>STORE001</location_code>
+      <status>pending</status>
+      <order_date>2024-01-15T10:30:00</order_date>
+      <total_amount>1299.98</total_amount>
+      <items>
+        <item>
+          <sku>SKU001</sku>
+          <product_name>Laptop HP ProBook 450</product_name>
+          <quantity>1</quantity>
+          <unit_price>649.99</unit_price>
+        </item>
+        <item>
+          <sku>SKU002</sku>
+          <product_name>Mouse Logitech MX Master</product_name>
+          <quantity>2</quantity>
+          <unit_price>49.99</unit_price>
+        </item>
+      </items>
+    </item>
+  </orders>
+</orders_response>
+
+Respuesta de error (500):
+<?xml version="1.0" ?>
+<error_response>
+  <status>error</status>
+  <error_code>INTERNAL_ERROR</error_code>
+  <message>Descripción del error</message>
+</error_response>
+
+
+2. OBTENER PEDIDO ESPECÍFICO
+-----------------------------
+Obtiene los detalles de un pedido específico por su número.
+
+Endpoint: GET /api/orders/{order_number}
+Parámetros de ruta:
+  - order_number: Número único del pedido
+
+Ejemplo de solicitud:
+  GET http://localhost:5002/api/orders/ORD-2024-001
+
+Respuesta exitosa (200 OK):
+<?xml version="1.0" ?>
+<order_response>
+  <status>success</status>
+  <order>
+    <id>1</id>
+    <order_number>ORD-2024-001</order_number>
+    <customer_name>María González</customer_name>
+    <location_code>STORE001</location_code>
+    <status>pending</status>
+    <order_date>2024-01-15T10:30:00</order_date>
+    <total_amount>1299.98</total_amount>
+    <items>
+      <item>
+        <sku>SKU001</sku>
+        <product_name>Laptop HP ProBook 450</product_name>
+        <quantity>1</quantity>
+        <unit_price>649.99</unit_price>
+      </item>
+    </items>
+  </order>
+</order_response>
+
+Respuesta de error - Pedido no encontrado (404):
+<?xml version="1.0" ?>
+<error_response>
+  <status>error</status>
+  <error_code>ORDER_NOT_FOUND</error_code>
+  <message>Order not found: ORD-2024-999</message>
+</error_response>
+
+
+3. ACTUALIZAR NIVELES DE STOCK
+-------------------------------
+Recibe actualizaciones de niveles de stock desde un sistema externo (Sistema A).
+Este endpoint se utiliza para sincronizar los niveles de inventario disponibles.
+
+Endpoint: POST /api/stock/update
+Tipo de contenido: application/xml
+Codificación: UTF-8
+
+Formato de solicitud XML:
+<?xml version="1.0" encoding="UTF-8"?>
+<stock_update>
+  <location>
+    <location_code>STORE001</location_code>
+    <products>
+      <product>
+        <sku>SKU001</sku>
+        <product_name>Laptop HP ProBook 450</product_name>
+        <quantity>5</quantity>
+      </product>
+      <product>
+        <sku>SKU002</sku>
+        <product_name>Mouse Logitech MX Master</product_name>
+        <quantity>15</quantity>
+      </product>
+    </products>
+  </location>
+  <location>
+    <location_code>STORE002</location_code>
+    <products>
+      <product>
+        <sku>SKU001</sku>
+        <product_name>Laptop HP ProBook 450</product_name>
+        <quantity>3</quantity>
+      </product>
+    </products>
+  </location>
+</stock_update>
+
+Ejemplo con curl:
+curl -X POST http://localhost:5002/api/stock/update \
+  -H "Content-Type: application/xml" \
+  -d @stock_update.xml
+
+Respuesta exitosa (200 OK):
+<?xml version="1.0" ?>
+<stock_update_response>
+  <status>success</status>
+  <message>Stock levels updated successfully</message>
+  <records_updated>15</records_updated>
+</stock_update_response>
+
+Respuesta de error - XML inválido (400):
+<?xml version="1.0" ?>
+<error_response>
+  <status>error</status>
+  <error_code>INVALID_XML</error_code>
+  <message>Invalid XML format: ...</message>
+</error_response>
+
+Respuesta de error - Datos faltantes (400):
+<?xml version="1.0" ?>
+<error_response>
+  <status>error</status>
+  <error_code>MISSING_DATA</error_code>
+  <message>No XML data provided</message>
+</error_response>
+
+
+4. CONSULTAR NIVELES DE STOCK
+------------------------------
+Obtiene los niveles de stock actuales almacenados en el sistema.
+
+Endpoint: GET /api/stock
+
+Ejemplo de solicitud:
+  GET http://localhost:5002/api/stock
+
+Respuesta exitosa (200 OK):
+<?xml version="1.0" ?>
+<stock_response>
+  <status>success</status>
+  <count>24</count>
+  <stock_levels>
+    <item>
+      <location_code>STORE001</location_code>
+      <sku>SKU001</sku>
+      <product_name>Laptop HP ProBook 450</product_name>
+      <quantity>5</quantity>
+      <last_updated>2024-01-15T14:30:00.123456</last_updated>
+    </item>
+    <item>
+      <location_code>STORE001</location_code>
+      <sku>SKU002</sku>
+      <product_name>Mouse Logitech MX Master</product_name>
+      <quantity>15</quantity>
+      <last_updated>2024-01-15T14:30:00.123456</last_updated>
+    </item>
+  </stock_levels>
+</stock_response>
+
+
+5. VERIFICAR DISPONIBILIDAD DE PEDIDO
+--------------------------------------
+Verifica si un pedido puede ser cumplido con los niveles de stock actuales.
+
+Endpoint: GET /api/orders/{order_number}/check_availability
+Parámetros de ruta:
+  - order_number: Número único del pedido
+
+Ejemplo de solicitud:
+  GET http://localhost:5002/api/orders/ORD-2024-001/check_availability
+
+Respuesta exitosa (200 OK):
+<?xml version="1.0" ?>
+<availability_response>
+  <status>success</status>
+  <availability>
+    <order_number>ORD-2024-001</order_number>
+    <location_code>STORE001</location_code>
+    <available>true</available>
+    <available_items>
+      <item>
+        <sku>SKU001</sku>
+        <product_name>Laptop HP ProBook 450</product_name>
+        <required>1</required>
+        <available>5</available>
+      </item>
+    </available_items>
+    <unavailable_items/>
+  </availability>
+</availability_response>
+
+Si hay items no disponibles (available=false):
+<?xml version="1.0" ?>
+<availability_response>
+  <status>success</status>
+  <availability>
+    <order_number>ORD-2024-001</order_number>
+    <location_code>STORE001</location_code>
+    <available>false</available>
+    <available_items>
+      <item>
+        <sku>SKU002</sku>
+        <product_name>Mouse Logitech MX Master</product_name>
+        <required>2</required>
+        <available>15</available>
+      </item>
+    </available_items>
+    <unavailable_items>
+      <item>
+        <sku>SKU001</sku>
+        <product_name>Laptop HP ProBook 450</product_name>
+        <required>5</required>
+        <available>3</available>
+        <reason>Insufficient stock</reason>
+      </item>
+    </unavailable_items>
+  </availability>
+</availability_response>
+
+
+ENDPOINTS AUXILIARES
+====================
+
+HEALTH CHECK
+------------
+Endpoint: GET /health
+Verifica el estado del servicio.
+
+Respuesta:
+<?xml version="1.0" ?>
+<health>
+  <status>healthy</status>
+  <service>order-fulfillment-system</service>
+</health>
+
+
+INFORMACIÓN DEL SERVICIO
+-------------------------
+Endpoint: GET /
+Obtiene información básica del servicio.
+
+Respuesta:
+<?xml version="1.0" ?>
+<service_info>
+  <service>Sistema de Cumplimiento de Pedidos (System B)</service>
+  <version>1.0.0</version>
+  <documentation>Ver archivo API_DOCUMENTATION.txt</documentation>
+  <api_type>XML-based</api_type>
+</service_info>
+
+
+CÓDIGOS DE ERROR
+================
+
+CÓDIGOS DE ESTADO HTTP:
+- 200: Operación exitosa
+- 400: Solicitud incorrecta (datos inválidos o faltantes)
+- 404: Recurso no encontrado
+- 500: Error interno del servidor
+
+CÓDIGOS DE ERROR DE NEGOCIO:
+- ORDER_NOT_FOUND: El pedido solicitado no existe
+- INVALID_XML: El formato XML proporcionado es inválido
+- MISSING_DATA: Faltan datos requeridos en la solicitud
+- INVALID_DATA: Los datos proporcionados no son válidos
+- INTERNAL_ERROR: Error interno del sistema
+
+
+NOTAS IMPORTANTES
+=================
+
+1. FORMATO XML:
+   - Todas las solicitudes y respuestas utilizan formato XML
+   - La codificación es UTF-8
+   - Los elementos XML son sensibles a mayúsculas/minúsculas
+
+2. SINCRONIZACIÓN DE STOCK:
+   - Los niveles de stock deben ser actualizados regularmente desde el Sistema A
+   - Sin datos de stock, los pedidos no podrán verificar disponibilidad
+   - Use el endpoint POST /api/stock/update para sincronizar
+
+3. ESTADOS DE PEDIDOS:
+   - pending: Pedido recibido, esperando procesamiento
+   - processing: Pedido en proceso de cumplimiento
+   - completed: Pedido completado y enviado
+   - cancelled: Pedido cancelado
+
+4. INTEGRACIÓN:
+   - Este sistema depende del Sistema A para obtener niveles de stock actuales
+   - La integración debe transformar datos entre JSON (Sistema A) y XML (Sistema B)
+   - Se recomienda sincronización periódica de inventario
+
+
+EJEMPLOS DE USO CON CURL
+=========================
+
+# Listar todos los pedidos
+curl http://localhost:5002/api/orders
+
+# Listar solo pedidos pendientes
+curl "http://localhost:5002/api/orders?status=pending"
+
+# Obtener pedido específico
+curl http://localhost:5002/api/orders/ORD-2024-001
+
+# Actualizar niveles de stock
+curl -X POST http://localhost:5002/api/stock/update \
+  -H "Content-Type: application/xml" \
+  -d '<?xml version="1.0"?>
+<stock_update>
+  <location>
+    <location_code>STORE001</location_code>
+    <products>
+      <product>
+        <sku>SKU001</sku>
+        <product_name>Laptop HP</product_name>
+        <quantity>5</quantity>
+      </product>
+    </products>
+  </location>
+</stock_update>'
+
+# Consultar niveles de stock
+curl http://localhost:5002/api/stock
+
+# Verificar disponibilidad de pedido
+curl http://localhost:5002/api/orders/ORD-2024-001/check_availability
+
+
+SOPORTE
+=======
+Para problemas o preguntas sobre esta API, consulte los logs del contenedor:
+  docker-compose logs -f
+
+================================================================================
+FIN DE LA DOCUMENTACIÓN
+================================================================================

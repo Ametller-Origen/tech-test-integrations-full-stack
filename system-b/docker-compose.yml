@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: system-b-orders
+    ports:
+      - "5002:5002"
+    volumes:
+      - orders-data:/app
+    environment:
+      - FLASK_ENV=development
+    restart: unless-stopped
+
+volumes:
+  orders-data:

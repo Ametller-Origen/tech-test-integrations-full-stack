@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: system-a-inventory
+    ports:
+      - "5001:5001"
+    volumes:
+      - inventory-data:/app
+    environment:
+      - FLASK_ENV=development
+    restart: unless-stopped
+
+volumes:
+  inventory-data:
