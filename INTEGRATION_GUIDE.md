@@ -188,7 +188,7 @@ Crea un directorio `integration/` con:
 - Archivo de dependencias
 - Cualquier otro archivo necesario
 
-Tu código deberá subirse en una rama independiente del repositorio.
+Tu código deberá subirse en un fork del repositorio.
 
 ## Recursos
 

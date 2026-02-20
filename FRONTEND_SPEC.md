@@ -322,7 +322,7 @@ frontend-monitor/
 ```
 
 ## Instrucciones de Entrega
-El código deberá subirse en la misma rama que la fase 1.
+Tu código puede estar disponible en el mismo fork que en la fase 1, no hace falta hacer un fork a parte.
 
 ### README.md debe incluir:
 
